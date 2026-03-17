@@ -657,6 +657,14 @@ var globeImg = new Image(), globeOk = false;
 globeImg.onload = function(){ globeOk = true; };
 globeImg.src = 'assets/globe.png';
 
+var redGateImg = new Image(), redGateOk = false;
+redGateImg.onload = function(){ redGateOk = true; };
+redGateImg.src = 'assets/red-gate_game.png';
+
+var blueGateImg = new Image(), blueGateOk = false;
+blueGateImg.onload = function(){ blueGateOk = true; };
+blueGateImg.src = 'assets/blue-gate_game.png';
+
 /* ══════════════════════════════════════
    UTM
 ══════════════════════════════════════ */
@@ -675,13 +683,12 @@ function getUTM(){
    GAME CONSTANTS
 ══════════════════════════════════════ */
 var TOTAL_GATES   = 15;
-var GATE_SPACING  = 280;
-var COURSE_LEN    = TOTAL_GATES * GATE_SPACING + 700;
-var SCROLL_SPEED  = 4.2;
-var MAX_SPEED     = 9.0;
-var SPEED_INC     = 0.0035;
+var GATE_SPACING  = 240;
+var COURSE_LEN    = TOTAL_GATES * GATE_SPACING + 600;
+var SCROLL_SPEED  = 3.8;
+var MAX_SPEED     = 7.5;
+var SPEED_INC     = 0.003;
 var TL = 0.05, TR = 0.95;
-var GATE_W        = 0.68;
 var GLOB_R        = 18;
 var MISS_PEN      = 3;
 var GLOBE_BONUS   = 150;
@@ -766,18 +773,27 @@ function wToSY(wy){ return H - (wy - worldY); }
 function buildCourse(){
   gates=[]; globes=[];
   var rng = seededRng(Date.now());
+  var GATE_OPEN = 0.28; /* gate opening width as fraction of track */
   for(var i=0;i<TOTAL_GATES;i++){
-    var wy = 420 + i*GATE_SPACING;
-    var xf = 0.16 + rng()*0.68;
-    gates.push({worldY:wy, xFrac:xf, isRed:i%2===0,
+    var wy = 380 + i*GATE_SPACING;
+    /* Color: alternating red, blue, red, blue... */
+    var isRed = i%2===0;
+    /* Zigzag: alternate left/right each gate */
+    var goLeft = i%2===0;
+    /* Center of gate opening, zigzag pattern */
+    var cx = goLeft
+      ? 0.24 + rng()*0.10
+      : 0.66 + rng()*0.10;
+    gates.push({worldY:wy, xFrac:cx, gateW:GATE_OPEN, isRed:isRed,
       passed:false, missed:false, flashT:0});
+    /* Globe near gate */
     if(rng()<0.45){
-      globes.push({worldY:wy-80-rng()*70,
-        xFrac:xf+(rng()-.5)*.22,
+      globes.push({worldY:wy-40-rng()*50,
+        xFrac: cx + (rng()-.5)*0.12,
         done:false, t:rng()*Math.PI*2});
     }
   }
-  gates.push({worldY:COURSE_LEN-120, xFrac:.5,
+  gates.push({worldY:COURSE_LEN-100, xFrac:.5, gateW:0.9,
     isFinish:true, passed:false, missed:false, flashT:0});
 }
 
@@ -834,9 +850,9 @@ function updateSkier(){
     var sy=wToSY(g.worldY);
     if(sy>skierSY){
       if(g.isFinish){ g.passed=true; triggerFinish(); return; }
-      var openW = W*(TR-TL)*GATE_W;
-      var gL    = trackX(g.xFrac)-openW/2;
-      var gR    = trackX(g.xFrac)+openW/2;
+      var openW = W*(TR-TL)*g.gateW;
+      var gL = trackX(g.xFrac)-openW/2;
+      var gR = trackX(g.xFrac)+openW/2;
       if(skierX>gL && skierX<gR){
         g.passed=true; g.flashT=1; cleanGates++;
         pfxGate(skierX,skierSY,g.isRed);
@@ -1002,6 +1018,7 @@ function drawGate(g){
   var sy=wToSY(g.worldY);
   if(sy<-100||sy>H+100) return;
 
+  /* Finish line */
   if(g.isFinish){
     ctx.save();
     var fl=W*TL,fr=W*TR,bh=10,sqSz=7;
@@ -1020,83 +1037,54 @@ function drawGate(g){
     ctx.restore();return;
   }
 
-  var isRed  = g.isRed;
-  var col    = isRed ? RED : BLUE_GATE;
-  var openW  = W*(TR-TL)*GATE_W;
-  var cx     = trackX(g.xFrac);
-  var lx     = cx-openW/2;
-  var rx     = cx+openW/2;
-  var flashA = Math.max(0,g.flashT);
+  var cx    = trackX(g.xFrac);
+  var openW = W*(TR-TL)*g.gateW;
+  var lx    = cx - openW/2;
+  var rx    = cx + openW/2;
+  var flashA = Math.max(0, g.flashT);
   var missed = g.missed;
+  var gateH = 70;
 
   ctx.save();
-  if(missed) ctx.globalAlpha=.35;
+  if(missed) ctx.globalAlpha = 0.35;
 
-  if(flashA>0){
-    ctx.globalAlpha=flashA*.45;
-    ctx.fillStyle=isRed?'rgba(226,0,26,.2)':'rgba(30,95,168,.2)';
-    ctx.fillRect(lx-8,sy-50,openW+16,60);
-    ctx.globalAlpha=missed?.35:1;
+  /* Flash glow on pass */
+  if(flashA > 0){
+    ctx.globalAlpha = flashA * 0.4;
+    ctx.fillStyle = g.isRed ? 'rgba(226,0,26,.2)' : 'rgba(30,95,168,.2)';
+    ctx.fillRect(lx-5, sy-gateH-10, openW+10, gateH+20);
+    ctx.globalAlpha = missed ? 0.35 : 1;
   }
 
-  function drawPole(px){
-    ctx.fillStyle='rgba(0,0,0,.15)';
-    ctx.beginPath();ctx.ellipse(px+4,sy+6,4,2.5,0,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle='rgba(255,255,255,.7)';
-    ctx.beginPath();ctx.ellipse(px,sy+2,12,6,0,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle='rgba(220,235,248,.9)';
-    ctx.beginPath();ctx.ellipse(px,sy,10,5,0,0,Math.PI*2);ctx.fill();
-    var grad=ctx.createLinearGradient(px-3,0,px+3,0);
-    grad.addColorStop(0,'rgba(160,160,160,.6)');
-    grad.addColorStop(.4,'rgba(220,220,220,.9)');
-    grad.addColorStop(1,'rgba(140,140,140,.6)');
-    ctx.fillStyle=grad;
-    ctx.beginPath();ctx.roundRect(px-2.5,sy-38,5,38,2);ctx.fill();
-    var cgrad=ctx.createLinearGradient(px-3,0,px+3,0);
-    cgrad.addColorStop(0,'rgba(0,0,0,.2)');
-    cgrad.addColorStop(.35,'rgba(255,255,255,.25)');
-    cgrad.addColorStop(1,'rgba(0,0,0,.15)');
-    ctx.fillStyle=col;
-    ctx.beginPath();ctx.roundRect(px-3,sy-90,6,55,2);ctx.fill();
-    ctx.fillStyle='rgba(255,255,255,.22)';
-    ctx.beginPath();ctx.roundRect(px-1.5,sy-90,2.5,55,1);ctx.fill();
+  /* Draw gate images (left + right pole) */
+  var img = g.isRed ? redGateImg : blueGateImg;
+  var imgLoaded = g.isRed ? redGateOk : blueGateOk;
+  /* Image aspect ratio ~0.5 (width/height) */
+  var imgW = gateH * 0.5;
+
+  if(imgLoaded && img.complete && img.naturalWidth > 0){
+    ctx.drawImage(img, lx - imgW/2, sy - gateH, imgW, gateH);
+    ctx.drawImage(img, rx - imgW/2, sy - gateH, imgW, gateH);
+  } else {
+    /* Fallback: colored poles + flag */
+    var col = g.isRed ? RED : BLUE_GATE;
+    ctx.fillStyle = col;
+    ctx.fillRect(lx-3, sy-gateH, 6, gateH);
+    ctx.fillRect(rx-3, sy-gateH, 6, gateH);
+    ctx.globalAlpha = 0.7;
+    ctx.fillRect(lx, sy-gateH+8, openW, 18);
+    ctx.globalAlpha = 1;
   }
 
-  drawPole(lx);
-  drawPole(rx);
-
-  var flagTop=sy-88;
-  var flagBot=sy-60;
-  ctx.fillStyle=col;
-  ctx.beginPath();
-  ctx.moveTo(lx-3, flagTop);ctx.lineTo(rx+3, flagTop);
-  ctx.lineTo(rx+5, flagBot);ctx.lineTo(lx-5, flagBot);
-  ctx.closePath();ctx.fill();
-  ctx.fillStyle='rgba(255,255,255,.18)';
-  ctx.beginPath();
-  ctx.moveTo(lx-2, flagTop+2);ctx.lineTo(rx+2, flagTop+2);
-  ctx.lineTo(rx+3, flagTop+10);ctx.lineTo(lx-3, flagTop+10);
-  ctx.closePath();ctx.fill();
-  ctx.strokeStyle='rgba(0,0,0,.25)';ctx.lineWidth=1;
-  ctx.beginPath();
-  ctx.moveTo(lx-3,flagTop);ctx.lineTo(rx+3,flagTop);
-  ctx.lineTo(rx+5,flagBot);ctx.lineTo(lx-5,flagBot);
-  ctx.closePath();ctx.stroke();
-
-  for(var gi=0;gi<gates.length;gi++){
-    if(gates[gi]===g){
-      ctx.fillStyle='rgba(255,255,255,.7)';
-      ctx.font='900 11px '+FONT;
-      ctx.textAlign='center';ctx.textBaseline='middle';
-      ctx.fillText(gi+1, cx, flagTop+(flagBot-flagTop)/2);
-      break;
-    }
+  /* Gate number label */
+  var gateIdx = gates.indexOf(g);
+  if(gateIdx >= 0 && gateIdx < TOTAL_GATES){
+    ctx.fillStyle = 'rgba(255,255,255,.9)';
+    ctx.font = '900 11px ' + FONT;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(gateIdx+1, cx, sy - gateH + 20);
   }
-
-  ctx.strokeStyle=col;ctx.lineWidth=2.5;ctx.lineCap='round';
-  ctx.setLineDash([]);
-  ctx.beginPath();ctx.moveTo(W*TL,sy-20);ctx.lineTo(lx,sy-20);ctx.stroke();
-  ctx.beginPath();ctx.moveTo(rx,sy-20);ctx.lineTo(W*TR,sy-20);ctx.stroke();
 
   ctx.restore();
 }
