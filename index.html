@@ -917,51 +917,64 @@ function updateParts(){
    DRAW BACKGROUND
 ══════════════════════════════════════ */
 function drawBg(){
-  var g=ctx.createLinearGradient(0,0,0,H);
-  g.addColorStop(0,'#06111f');g.addColorStop(.5,'#0d2240');g.addColorStop(1,'#142a44');
-  ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  /* Bright snow background */
+  var g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, '#e8f0f6');
+  g.addColorStop(0.3, '#dce8f0');
+  g.addColorStop(1, '#c8daea');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
 
-  var t=performance.now()/1000;
-  for(var i=0;i<stars.length;i++){
-    var s=stars[i];if(s.y>.65)continue;
-    var al=s.a*(.6+.4*Math.sin(s.tw+t*.8));
-    ctx.beginPath();ctx.arc(s.x*W,s.y*H,s.r,0,Math.PI*2);
-    ctx.fillStyle='rgba(255,255,255,'+al.toFixed(2)+')';ctx.fill();
-  }
-
-  var sg=ctx.createLinearGradient(0,H*.36,0,H);
-  sg.addColorStop(0,'rgba(205,228,242,0)');
-  sg.addColorStop(.18,'rgba(220,235,246,.95)');
-  sg.addColorStop(1,'rgba(192,216,234,1)');
-  ctx.fillStyle=sg;ctx.fillRect(0,H*.36,W,H*.64);
-
-  ctx.save();ctx.globalAlpha=.055;ctx.strokeStyle='#fff';ctx.lineWidth=1;
-  var sp=40,off=(worldY*.22)%sp;
-  for(var ly=H*.5-off;ly<H+sp;ly+=sp){
-    ctx.beginPath();ctx.moveTo(0,ly);ctx.lineTo(W,ly);ctx.stroke();
-  }
-  ctx.restore();
-
+  /* Snow grooming lines (subtle horizontal texture) */
   ctx.save();
-  ctx.strokeStyle='rgba(90,148,200,.28)';ctx.lineWidth=2;ctx.setLineDash([7,8]);
-  ctx.beginPath();ctx.moveTo(W*TL,0);ctx.lineTo(W*TL,H);ctx.stroke();
-  ctx.beginPath();ctx.moveTo(W*TR,0);ctx.lineTo(W*TR,H);ctx.stroke();
-  ctx.setLineDash([]);ctx.restore();
-
-  ctx.save();ctx.globalAlpha=.10;ctx.fillStyle='#7aaac8';
-  ctx.beginPath();ctx.moveTo(0,H);
-  var m=[0,.80,.10,.55,.22,.68,.36,.46,.50,.63,.66,.41,.80,.58,.92,.48,1,.71];
-  for(var i=0;i<m.length;i+=2)ctx.lineTo(m[i]*W,m[i+1]*H);
-  ctx.lineTo(W,H);ctx.closePath();ctx.fill();
-  ctx.globalAlpha=.17;ctx.fillStyle='#5890b0';
-  ctx.beginPath();ctx.moveTo(0,H);
-  var m2=[0,.86,.12,.67,.24,.77,.38,.61,.52,.74,.65,.55,.78,.71,.90,.61,1,.79];
-  for(var i=0;i<m2.length;i+=2)ctx.lineTo(m2[i]*W,m2[i+1]*H);
-  ctx.lineTo(W,H);ctx.closePath();ctx.fill();
+  ctx.globalAlpha = 0.06;
+  ctx.strokeStyle = '#8aa8c0';
+  ctx.lineWidth = 1;
+  var sp = 28, off = (worldY * 0.3) % sp;
+  for(var ly = -off; ly < H + sp; ly += sp){
+    ctx.beginPath(); ctx.moveTo(0, ly); ctx.lineTo(W, ly); ctx.stroke();
+  }
   ctx.restore();
 
+  /* Subtle shadow/depth stripes */
+  ctx.save();
+  ctx.globalAlpha = 0.03;
+  ctx.fillStyle = '#6090b0';
+  var stripeOff = (worldY * 0.15) % 120;
+  for(var sy2 = -stripeOff; sy2 < H + 120; sy2 += 120){
+    ctx.fillRect(0, sy2, W, 40);
+  }
+  ctx.restore();
+
+  /* Track edge markers (red safety nets) - FIXED position */
+  ctx.save();
+  var netL = W * TL;
+  var netR = W * TR;
+  /* Red tinted area outside track */
+  ctx.fillStyle = 'rgba(180, 30, 30, 0.08)';
+  ctx.fillRect(0, 0, netL, H);
+  ctx.fillRect(netR, 0, W - netR, H);
+  /* Net fence: fixed vertical posts */
+  ctx.strokeStyle = 'rgba(160, 30, 30, 0.3)';
+  ctx.lineWidth = 2;
+  var postSp = 50;
+  for(var py = 0; py < H; py += postSp){
+    ctx.beginPath(); ctx.moveTo(netL - 1, py); ctx.lineTo(netL - 1, py + postSp); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(netR + 1, py); ctx.lineTo(netR + 1, py + postSp); ctx.stroke();
+  }
+  /* Horizontal net lines (fixed) */
+  ctx.strokeStyle = 'rgba(180, 40, 40, 0.12)';
+  ctx.lineWidth = 1;
+  for(var ny = 0; ny < H; ny += 10){
+    ctx.beginPath(); ctx.moveTo(0, ny); ctx.lineTo(netL - 2, ny); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(netR + 2, ny); ctx.lineTo(W, ny); ctx.stroke();
+  }
+  ctx.restore();
+
+  /* Trees on sides */
   drawTrees();
 }
+
 
 /* ══════════════════════════════════════
    TREES
@@ -990,24 +1003,33 @@ function drawTrees(){
   }
 }
 function drawTree(tx,ty,sz,shade){
-  var s=sz*Math.min(W/400,1.2);
+  var s=sz*Math.min(W/400,1.4);
   ctx.save();
-  ctx.fillStyle='rgba(0,0,0,.07)';
-  ctx.beginPath();ctx.ellipse(tx+5*s,ty+5*s,10*s,4*s,.2,0,Math.PI*2);ctx.fill();
-  ctx.fillStyle='#5a4a3a';ctx.fillRect(tx-1.5*s,ty-4*s,3*s,8*s);
-  var cols=shade<.5?['#2d6b4e','#4a8c6e','#6aad8a']:['#265a3e','#3d7a5f','#5a9d7a'];
-  for(var j=0;j<3;j++){
-    var lw=(18-j*4)*s, lh=14*s, ly=ty-(10+j*12)*s;
-    ctx.fillStyle=cols[j];
+  /* Shadow on snow */
+  ctx.fillStyle='rgba(0,0,0,.06)';
+  ctx.beginPath();ctx.ellipse(tx+4*s,ty+4*s,12*s,5*s,.2,0,Math.PI*2);ctx.fill();
+  /* Trunk */
+  ctx.fillStyle='#4a3a2a';ctx.fillRect(tx-2*s,ty-6*s,4*s,10*s);
+  /* Tree layers (darker greens for realism) */
+  var cols=shade<.5?['#1a4d32','#2d6b4e','#3d7a5a']:['#15402a','#265a3e','#357050'];
+  for(var j=0;j<4;j++){
+    var lw=(20-j*3.5)*s, lh=13*s, ly=ty-(8+j*11)*s;
+    ctx.fillStyle=cols[Math.min(j,2)];
     ctx.beginPath();ctx.moveTo(tx,ly-lh);
     ctx.lineTo(tx-lw,ly);ctx.lineTo(tx+lw,ly);
     ctx.closePath();ctx.fill();
   }
-  ctx.fillStyle='rgba(255,255,255,.65)';
-  var capY=ty-(10+2*12)*s-14*s;
-  ctx.beginPath();ctx.moveTo(tx,capY);
-  ctx.lineTo(tx-6*s,capY+7*s);ctx.lineTo(tx+6*s,capY+7*s);
-  ctx.closePath();ctx.fill();
+  /* Snow on branches */
+  ctx.fillStyle='rgba(255,255,255,.5)';
+  for(var j=0;j<3;j++){
+    var ly=ty-(8+j*11)*s-2*s;
+    var lw2=(16-j*3)*s;
+    ctx.beginPath();ctx.moveTo(tx-lw2,ly+10*s);
+    ctx.quadraticCurveTo(tx,ly+7*s,tx+lw2,ly+10*s);
+    ctx.lineTo(tx+lw2,ly+12*s);
+    ctx.quadraticCurveTo(tx,ly+9*s,tx-lw2,ly+12*s);
+    ctx.closePath();ctx.fill();
+  }
   ctx.restore();
 }
 
