@@ -654,14 +654,17 @@ var FORMSPARK_DE = "https://submit-form.com/swQe0t6kd";
    GLOBE IMAGE (for canvas rendering)
 ══════════════════════════════════════ */
 var globeImg = new Image(), globeOk = false;
+globeImg.crossOrigin = 'anonymous';
 globeImg.onload = function(){ globeOk = true; };
 globeImg.src = 'https://raw.githubusercontent.com/marcozihlmann-source/Crystal-Challenge/main/assets/globe.png';
 
 var redGateImg = new Image(), redGateOk = false;
+redGateImg.crossOrigin = 'anonymous';
 redGateImg.onload = function(){ redGateOk = true; };
 redGateImg.src = 'https://raw.githubusercontent.com/marcozihlmann-source/Crystal-Challenge/main/assets/red-gate_game.png';
 
 var blueGateImg = new Image(), blueGateOk = false;
+blueGateImg.crossOrigin = 'anonymous';
 blueGateImg.onload = function(){ blueGateOk = true; };
 blueGateImg.src = 'https://raw.githubusercontent.com/marcozihlmann-source/Crystal-Challenge/main/assets/blue-gate_game.png';
 
