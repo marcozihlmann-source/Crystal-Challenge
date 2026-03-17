@@ -9,25 +9,20 @@
     @font-face{font-family:'Cera';src:url('https://www.swiss-ski.ch/fileadmin/templates/fonts/CeraPro-Bold.woff2') format('woff2');font-weight:700;font-display:swap;}
     @font-face{font-family:'Cera';src:url('https://www.swiss-ski.ch/fileadmin/templates/fonts/CeraPro-Black.woff2') format('woff2');font-weight:900;font-display:swap;}
 
-    #crystal-game,
-    #crystal-game *,
-    #crystal-game *::before,
-    #crystal-game *::after{box-sizing:border-box;margin:0;padding:0;}
-    #crystal-game{
-      position:relative;width:100%;max-width:1060px;margin:0 auto;
-      height:100vh;max-height:100vh;overflow:hidden;
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    html,body{width:100%;height:100%;overflow:hidden;
       font-family:'Cera',system-ui,-apple-system,sans-serif;
       -webkit-user-select:none;user-select:none;
       background:#0a1628;}
 
     /* ── BACKGROUND ── */
-    #bgBlur{position:absolute;inset:0;z-index:0;
+    #bgBlur{position:fixed;inset:0;z-index:0;
       background:url('https://raw.githubusercontent.com/marcozihlmann-source/Crystal-Challenge/main/assets/background_crystal-challenge.png') center/cover no-repeat;
       filter:blur(40px) brightness(.65);
       transform:scale(1.15);}
 
     /* ── SCREEN SYSTEM ── */
-    .screen{position:absolute;inset:0;z-index:1;
+    .screen{position:fixed;inset:0;z-index:1;
       display:flex;align-items:center;justify-content:center;
       padding:8px;
       opacity:0;pointer-events:none;
@@ -276,7 +271,7 @@
     .thanks-text{font-size:14px;font-weight:700;color:rgba(0,0,0,.5);line-height:1.5;}
 
     /* ── MODAL ── */
-    .modal-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.5);
+    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.5);
       z-index:100;display:grid;place-items:center;padding:20px;}
     .modal-backdrop.hidden{display:none;}
     .modal-card{background:#fff;border-radius:5px;
@@ -289,7 +284,7 @@
       background:#E2001A;color:#fff;width:100%;font-size:14px;}
 
     /* ── TOAST ── */
-    #toast{position:absolute;left:50%;bottom:80px;transform:translateX(-50%);
+    #toast{position:fixed;left:50%;bottom:80px;transform:translateX(-50%);
       background:rgba(0,0,0,.78);color:#fff;padding:8px 18px;
       border-radius:5px;font-size:13px;font-weight:900;
       opacity:0;pointer-events:none;transition:opacity .2s ease;
@@ -297,27 +292,25 @@
     #toast.show{opacity:1;}
 
     /* ── MISS FLASH ── */
-    #missFlash{position:absolute;inset:0;background:rgba(226,0,26,.18);
+    #missFlash{position:fixed;inset:0;background:rgba(226,0,26,.18);
       pointer-events:none;z-index:50;opacity:0;transition:opacity .15s ease;}
     #missFlash.show{opacity:1;}
 
     /* ── RESPONSIVE ── */
     @media(max-width:600px){
       .screen{padding:0;}
-      .card{border-radius:0;max-height:100%;border:none !important;}
+      .card{border-radius:0;max-height:100vh;border:none !important;}
       .card-head{padding:14px 16px 12px;}
       .card-body{padding:16px;}
       .game-area{margin:0 8px 8px;min-height:200px;}
       .game-title-bar{padding:10px 16px 6px;}
       .hero-title{letter-spacing:0;}
       #scrGame{padding:0;}
-      #scrGame .card{height:100%;}
+      #scrGame .card{height:100vh;}
     }
   </style>
 </head>
 <body>
-
-<div id="crystal-game">
 
 <!-- Fixed blurred background -->
 <div id="bgBlur"></div>
@@ -647,8 +640,6 @@
 <!-- Toast & Flash -->
 <div id="toast"></div>
 <div id="missFlash"></div>
-
-</div><!-- /crystal-game -->
 
 <script>
 (function(){
